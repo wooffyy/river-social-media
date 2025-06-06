@@ -3,174 +3,146 @@
 #include <string>
 #include <sstream>
 #include <ctime>
-#include <limits>
+#include <queue>
 #include "notify.h"
 #include "post.h"
 
 using namespace std;
 
 namespace Notify {
-    // Insialisasi queue
-    void initQueue(NotifQueue* queue) {
-        queue->front = nullptr;
-        queue->rear = nullptr;
-    }
 
-    // Melakukan enqueue (Menambah queue dengan notifikasi baru)
-    void enqueue(NotifQueue* queue, const string& message, const string& timestamp){
-        // Alokasi memori notifikasi baru
-        Notif* newNotif = new Notif();
-        newNotif->message = message;     
-        newNotif->timestamp = timestamp; 
-        newNotif->next = nullptr;       
-        
-        if (isEmpty(queue)) {
-            queue->front = queue->rear = newNotif;
-        } else {
-            queue->rear->next = newNotif;
-            queue->rear = newNotif;
-        }
-    }
-
-    // Melakukan dequeue
-    bool dequeue(NotifQueue* queue, string& message, string& timestamp){
-        if (isEmpty(queue)) {
-            return false;
-        }
-
-        // Inisialisasi pointer temp
-        Notif* temp = queue->front;
-        message = temp->message;
-        timestamp = temp->timestamp;
-
-        queue->front = queue->front->next;
-        if (queue->front == nullptr) {
-            queue->rear = nullptr;
-        }
-
-        // Menghapus notifikasi di temp
-        delete temp;
-        return true;
-    }
-
-    // Cek apakah queue kosong
-    bool isEmpty(NotifQueue* queue) {
-        return queue->front == nullptr;
-    }
-
-    // Menyimpan notifikasi ke file notifikasi pribadi milik user
-    bool saveNotif(const string& username, NotifQueue* queue) {
+    // Simpan notifikasi ke file
+    bool saveNotif(const string& username, const queue<Notif>& notifQueue) {
         string file_name = "users/" + username + "/notification.txt";
-        ofstream file(file_name); 
-
+        ofstream file(file_name);
         if (!file) {
-            cout << "Gagal membuka file untuk menulis!\n";
+            cout << "Gagal membuka file notifikasi untuk menulis!\n";
             return false;
         }
-        
-        // Menulis queue ke file notifikasi
-        Notif* current = queue->front;
-        while (current != nullptr) {
-            file << current->message << "`" << current->timestamp << "\n";
-            current = current->next;
+
+        queue<Notif> temp = notifQueue;
+        while (!temp.empty()) {
+            Notif n = temp.front();
+            temp.pop();
+            file << n.message << "`" << n.timestamp << "`" << (n.is_checked ? "1" : "0") << "\n";
         }
         file.close();
         return true;
     }
 
-    // Mengambil notifikasi dari file untuk disimpan ke queue kembali
-    bool loadNotif(const string& username, NotifQueue* queue){
+    // Load notifikasi dari file
+    bool loadNotif(const string& username, queue<Notif>& notifQueue) {
+        notifQueue = queue<Notif>();
         string file_name = "users/" + username + "/notification.txt";
         ifstream file(file_name);
-
         if (!file) {
-            cout << "Belum ada notifikasi\n";
+            // File tidak ada = tidak ada notifikasi
             return true;
         }
 
-        string msg, ts;
-        while(dequeue(queue,msg,ts)){}
-
         string line;
         while (getline(file, line)) {
-            if(line.empty()) continue;
-            
-            size_t pos = line.find('`');
-            if (pos != string::npos) {
-                string message = line.substr(0, pos);
-                string timestamp = line.substr(pos + 1);
-                enqueue(queue, message, timestamp);
-            }
+            if (line.empty()) continue;
+
+            size_t pos1 = line.find('`');
+            size_t pos2 = line.rfind('`');
+
+            if (pos1 == string::npos || pos2 == string::npos || pos1 == pos2) continue;
+
+            string msg = line.substr(0, pos1);
+            string ts = line.substr(pos1 + 1, pos2 - pos1 - 1);
+            string checkStr = line.substr(pos2 + 1);
+
+            Notif n;
+            n.message = msg;
+            n.timestamp = ts;
+            n.is_checked = (checkStr == "1");
+
+            notifQueue.push(n);
         }
+
         file.close();
         return true;
     }
 
-    // Membuat notifikasi untuk aktivitas like
-    void likesNotif(const string& fromUser, const string& toUser, int postID, const string& postContent) {
-        // Memendekkan isi post untuk tampilan pesan di notifikasi
-        if (fromUser == toUser) return;
-            string shorten = postContent;
-        if (shorten.length() > 20) {
-            shorten = shorten.substr(0, 18) + "...";
+    // Tampilkan dan update status notifikasi
+    void showNotif(const string& username) {
+        queue<Notif> notifQueue;
+        if (!loadNotif(username, notifQueue)) {
+            cout << "Gagal memuat notifikasi.\n";
+            return;
         }
 
-        string msg = "@" + fromUser + " memberi like di post: \"" + shorten + "\"";
-        string timestamp = River::getTime();
+        if (notifQueue.empty()) {
+            cout << "Tidak ada notifikasi.\n";
+            return;
+        }
 
-        // Membuat queue notifikasi 
-        NotifQueue queue;
-        initQueue(&queue);
-        loadNotif(toUser, &queue);
-        enqueue(&queue, msg, timestamp);
-        saveNotif(toUser, &queue);
+        cout << "=== Notifikasi untuk @" << username << " ===\n";
+        queue<Notif> updatedQueue;
+
+        while (!notifQueue.empty()) {
+            Notif n = notifQueue.front();
+            notifQueue.pop();
+
+            cout << (n.is_checked ? "  " : "* ") << n.message << " [" << n.timestamp << "]\n";
+            n.is_checked = true; // tandai sudah dibaca
+            updatedQueue.push(n);
+        }
+
+        cout << "============================\n";
+        saveNotif(username, updatedQueue);
     }
 
-    // Membuat notifikasi untuk aktivitasi comment
-    void commentNotif(const string& fromUser, const string& toUser, int postID, const string& postContent) {
-        // Memendekkan isi post untuk tampilan pesan di notifikasi
+    // Hitung jumlah notifikasi yang belum dibaca
+    int countUnreadNotif(const string& username) {
+        queue<Notif> notifQueue;
+        if (!loadNotif(username, notifQueue)) return 0;
+
+        int count = 0;
+        queue<Notif> temp = notifQueue;
+        while (!temp.empty()) {
+            if (!temp.front().is_checked) count++;
+            temp.pop();
+        }
+        return count;
+    }
+
+    // Tambah notif like
+    void likesNotif(const string& fromUser, const string& toUser, int postID, const string& postContent) {
         if (fromUser == toUser) return;
         string shorten = postContent;
         if (shorten.length() > 20) {
             shorten = shorten.substr(0, 18) + "...";
         }
 
-        string msg = "@" + fromUser + " memberi komentar di post: \"" + shorten + "\"";
-        string timestamp = River::getTime();
+        Notif n;
+        n.message = "@" + fromUser + " memberi like di post: \"" + shorten + "\"";
+        n.timestamp = River::getTime();
+        n.is_checked = false;
 
-        // Membuat queue notifikasi
-        NotifQueue queue;
-        initQueue(&queue);
-        loadNotif(toUser, &queue);
-        enqueue(&queue, msg, timestamp);
-        saveNotif(toUser, &queue);
+        queue<Notif> notifQueue;
+        loadNotif(toUser, notifQueue);
+        notifQueue.push(n);
+        saveNotif(toUser, notifQueue);
     }
 
-    // Fungsi untuk membuat tampilan notifikasi
-    void showNotif(const string& username) {
-        NotifQueue queue;
-        initQueue(&queue);
-
-        if(!loadNotif(username, &queue)) {
-            cout << "Gagal memuat notifikasi.\n";
-            return;
-        }
-        if(isEmpty(&queue)) {
-            cout << "Tidak ada notifikasi baru.\n";
-            return;
+    // Tambah notif komentar
+    void commentNotif(const string& fromUser, const string& toUser, int postID, const string& postContent) {
+        if (fromUser == toUser) return;
+        string shorten = postContent;
+        if (shorten.length() > 20) {
+            shorten = shorten.substr(0, 18) + "...";
         }
 
-        cout << "=== Notifikasi ===\n";
-        Notif* current = queue.front;
-        int count = 1;
-        while (current != nullptr) {
-            cout << current->message << " [" << current->timestamp << "]\n";
-            current = current->next;
-            count++;
-        }
-        cout << "===================\n";
+        Notif n;
+        n.message = "@" + fromUser + " memberi komentar di post: \"" + shorten + "\"";
+        n.timestamp = River::getTime();
+        n.is_checked = false;
 
-        string notif_msg, notif_ts;
-        while(dequeue(&queue, notif_msg, notif_ts)) {}
+        queue<Notif> notifQueue;
+        loadNotif(toUser, notifQueue);
+        notifQueue.push(n);
+        saveNotif(toUser, notifQueue);
     }
 }

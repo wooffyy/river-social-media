@@ -51,6 +51,7 @@ namespace Menu {
     
     // Fungsi untuk main menu 
     void userMenu(const string& username) {
+        int unread = Notify::countUnreadNotif(username);
         int choice;
         bool logout = false;
         string query;
@@ -60,7 +61,7 @@ namespace Menu {
             cout << "1. Create Post\n";
             cout << "2. View Feed\n";
             cout << "3. Search User\n";
-            cout << "4. Notifications\n";
+            cout << "4. Notifications (" << unread << ")\n";
             cout << "5. Activity History\n";
             cout << "6. Profile Page\n";
             cout << "0. Logout\n";
@@ -99,6 +100,7 @@ namespace Menu {
                     
                 case 4:
                     showNotifications(username);
+
                     break;
                     
                 case 5:
