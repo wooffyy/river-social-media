@@ -19,6 +19,7 @@ namespace River {
     Post* createPost(string username);
     bool sortbylike(const Post* a, const Post* b);
     void showFeed(const string& currentUsername);
+    void showFeedForUser(const string& currentUsername, const string& targetUsername);
     void updateUserPost(Post* post);
     void showComments(int postID);
     string getTime();

@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include "post.h" 
+#include "follow.h" 
 #include "account.h"
 #include "activity.h"
 #include "notify.h"
@@ -189,6 +190,86 @@ namespace River {
         release.close();
     }
 
+    void showFeedForUser(const string& currentUsername, const string& targetUsername) {
+        ifstream file("post_data.txt");
+        if (!file) {
+            cout << "Gagal membuka file post_data.txt!\n";
+            return;
+        }
+
+        vector<Post*> feed;
+        string line;
+        bool isFirstLine = true;
+        while (getline(file, line)) {
+            if (isFirstLine) {
+                isFirstLine = false; 
+                continue;
+            }
+
+            if (line.empty()) continue;
+
+            stringstream ss(line);
+            Post* post = new Post();
+            string temp;
+
+            getline(ss, temp, ',');
+            try {
+                post->id = stoi(temp);
+            } catch (...) {
+                delete post;
+                continue;
+            }
+            getline(ss, post->username, ',');
+            getline(ss, post->content, ',');
+            getline(ss, temp, ',');
+            post->likes = stoi(temp);
+
+            post->left = nullptr;
+            post->right = nullptr;
+
+            // Ini dia: filter hanya post dari targetUsername
+            if (post->username == targetUsername) {
+                feed.push_back(post);
+            } else {
+                delete post;
+            }
+        }
+        file.close();
+
+        if (feed.empty()) {
+            cout << "Tidak ada post dari @" << targetUsername << endl;
+            cout << "[Enter untuk kembali]"; cin.get();
+            return;
+        }
+
+        // Sort by like
+        sort(feed.begin(), feed.end(), [](const Post* a, const Post* b) {
+            return a->likes > b->likes;
+        });
+
+        // Linked list
+        Post* head = nullptr;
+        Post* tail = nullptr;
+        for (Post* p : feed) {
+            if (head == nullptr) {
+                head = tail = p;
+            } else {
+                tail->right = p;
+                p->left = tail;
+                tail = p;
+            }
+        }
+
+        if (head != nullptr) {
+            River::feedNavi(head, currentUsername);
+        }
+
+        // Cleanup
+        for (Post* p : feed) {
+            delete p;
+        }
+    }
+    
     void updateUserPost(Post* post) {
         string postFile = "users/" + post->username + "/posts.csv";
         ifstream file(postFile);
@@ -277,7 +358,7 @@ namespace River {
         Post* current = head;
         char input, lowerInput;
 
-        while(true){
+        while (true) {
             #ifdef _WIN32
                 system("cls");
             #else
@@ -289,11 +370,22 @@ namespace River {
                 break;
             }
 
-            cout << "from @" << current->username << endl;
+            // Tampilkan username + status following
+            cout << "from @" << current->username;
+
+            // Cek follow status
+            bool following = isFollowing(currentUsername, current->username);
+            if (currentUsername == current->username) {
+                cout << "    [Your Post]\n";
+            } else {
+                cout << "    [" << (following ? "Following" : "Follow") << "]\n";
+            }
+
+            // Tampilkan post content
             cout << "Post : " << "\n\n" << current->content << endl;
             cout << "\n" << current->likes << " likes | " << countComments(current->id) << " yappers" << endl;
             cout << "----------------------------------------------------------" << endl;
-            cout << "[L] to like    [C] to yap" << endl;
+            cout << "[L] to like    [C] to yap         [F] to follow/unfollow" << endl;
             cout << "[N] next post  [P] previous post  [X] to exit" << endl;
             cout << ">> ";
             cin >> input;
@@ -342,6 +434,14 @@ namespace River {
                     }
                 } else if (comment_inputLower == 'x') {
                     continue;
+                }
+            } else if (lowerInput == 'f') {
+                if (currentUsername == current->username) {
+                    cout << "Tidak bisa follow diri sendiri.\n";
+                } else if (isFollowing(currentUsername, current->username)) {
+                    unfollowUser(currentUsername, current->username);
+                } else {
+                    followUser(currentUsername, current->username);
                 }
             } else if (lowerInput == 'x') {
                 cout << "Keluar dari feed\n";

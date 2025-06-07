@@ -4,6 +4,7 @@
 #include "post.h"
 #include "account.h"
 #include "notify.h"
+#include "follow.h"
 #include "activity.h"
 #ifdef _WIN32
     #include <direct.h>
@@ -36,14 +37,212 @@ namespace Menu {
         }
     }
 
-    void profilePage(const string& username) { 
-        int idx = Account::findUserBST(username);
+    void searchPageMenu(const string& currentUsername, const string& targetUsername) {
+        int idx = Account::findUserBST(targetUsername);
         if (idx == -1) {
             cout << "Akun tidak ditemukan.\n";
             return;
         }
-        Account::profilePage(Account::userList[idx]);
+
+        while (true) {
+            #ifdef _WIN32
+                system("cls");
+            #else
+                system("clear");
+            #endif
+
+            cout << targetUsername << "\n";
+            cout << "1. Lihat Post\n";
+            cout << "2. " << (isFollowing(currentUsername, targetUsername) ? "Unfollow" : "Follow") << "\n";
+            cout << "0. Back\n";
+            cout << ">> ";
+
+            int choice;
+            if (!(cin >> choice)) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                continue;
+            }
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+            if (choice == 1) {
+                River::showFeedForUser(currentUsername, targetUsername);
+            } else if (choice == 2) {
+                if (currentUsername == targetUsername) {
+                    cout << "Tidak bisa follow diri sendiri.\n";
+                } else if (isFollowing(currentUsername, targetUsername)) {
+                    unfollowUser(currentUsername, targetUsername);
+                } else {
+                    followUser(currentUsername, targetUsername);
+                }
+            } else if (choice == 0) {
+                break;
+            } else {
+                cout << "Pilihan tidak valid.\n";
+            }
+        }
     }
+
+    void profilePageMenu(const string& currentUsername) {
+        while (true) {
+        #ifdef _WIN32
+            system("cls");
+        #else
+            system("clear");
+        #endif
+
+        // Hitung followers & following & post count
+        int followers = 0, following = 0;
+            for (const auto& pair : followGraph) {
+                if (pair.second.find(currentUsername) != pair.second.end()) {
+                    followers++;
+                }
+                if (pair.first == currentUsername) {
+                    following = pair.second.size();
+                }
+            }
+
+            double postCount = Account::countStats<double>(currentUsername, "posts");
+
+            // Tampilkan header
+            cout << currentUsername << "         " << followers << " Follower       " << following << " Following         " << postCount << " Posts\n";
+            cout << "\nBio (beta)\n";
+            cout << "--------------------------------------------------------\n";
+
+            // Menu
+            cout << "1. View Post Anda\n";
+            cout << "2. Edit Profile Anda\n";
+            cout << "3. Friend Suggestion\n";
+            cout << "0. Back\n";
+            cout << ">> ";
+
+            int choice;
+            if (!(cin >> choice)) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                continue;
+            }
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+            if (choice == 1) {
+                // View post milik sendiri
+                River::showFeedForUser(currentUsername, currentUsername);
+            } else if (choice == 2) {
+                // Edit Profile
+                cout << "Edit Profile:\n";
+                cout << "Masukkan username baru: ";
+                string newUsername;
+                getline(cin, newUsername);
+
+                if (Account::binarySearchUser(newUsername) != -1) {
+                    cout << "Username sudah digunakan!\n";
+                    continue;
+                }
+
+                cout << "Masukkan password baru: ";
+                string newPassword;
+                getline(cin, newPassword);
+
+                // Update user_data.txt
+                int idx = Account::binarySearchUser(currentUsername);
+                Account::userList[idx].username = newUsername;
+                Account::userList[idx].password = newPassword;
+                Account::saveUsers();
+
+                // Rename folder
+                string oldFolder = "users/" + currentUsername;
+                string newFolder = "users/" + newUsername;
+                rename(oldFolder.c_str(), newFolder.c_str());
+
+                // Update followGraph
+                auto it = followGraph.find(currentUsername);
+                if (it != followGraph.end()) {
+                    followGraph[newUsername] = std::move(it->second);
+                    followGraph.erase(it);
+                }
+                for (auto& pair : followGraph) {
+                    if (pair.second.erase(currentUsername)) {
+                        pair.second.insert(newUsername);
+                    }
+                }
+                saveFollowGraph();
+
+                // Update post_data.txt
+                ifstream infile("post_data.txt");
+                ofstream outfile("post_data_tmp.txt");
+                string line;
+                bool isFirstLine = true;
+                while (getline(infile, line)) {
+                    if (isFirstLine) {
+                        outfile << line << "\n";
+                        isFirstLine = false;
+                        continue;
+                    }
+                    stringstream ss(line);
+                    string id, username, content, likes;
+                    getline(ss, id, ',');
+                    getline(ss, username, ',');
+                    getline(ss, content, ',');
+                    getline(ss, likes, ',');
+                    if (username == currentUsername) {
+                        username = newUsername;
+                    }
+                    outfile << id << "," << username << "," << content << "," << likes << "\n";
+                }
+                infile.close();
+                outfile.close();
+                remove("post_data.txt");
+                rename("post_data_tmp.txt", "post_data.txt");
+
+                cout << "Profile berhasil diperbarui!\n";
+
+                // Update currentUsername di sini kalau kamu ingin biar update terus (optional)
+                // currentUsername = newUsername;
+                break; // biar balik ke menu utama
+            } else if (choice == 3) {
+                // Friend Suggestion (BFS)
+                cout << "Friend Suggestion:\n";
+                unordered_set<string> visited;
+                queue<string> q;
+                q.push(currentUsername);
+                visited.insert(currentUsername);
+
+                vector<string> suggestions;
+                while (!q.empty() && suggestions.size() < 5) {
+                    string user = q.front(); q.pop();
+                    auto it = followGraph.find(user);
+                    if (it != followGraph.end()) {
+                        for (const string& neighbor : it->second) {
+                            if (visited.find(neighbor) == visited.end()) {
+                                visited.insert(neighbor);
+                                q.push(neighbor);
+                                if (!isFollowing(currentUsername, neighbor)) {
+                                    suggestions.push_back(neighbor);
+                                    if (suggestions.size() >= 5) break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (suggestions.empty()) {
+                    cout << "Tidak ada saran teman.\n";
+                } else {
+                    cout << "Saran Teman:\n";
+                    for (const string& s : suggestions) {
+                        cout << "- @" << s << "\n";
+                    }
+                }
+
+                cout << "[Enter untuk kembali]"; cin.get();
+            } else if (choice == 0) {
+                break;
+            } else {
+                cout << "Pilihan tidak valid.\n";
+            }
+        }   
+    }
+
     
     void showFeed(const string& username) {
         River::showFeed(username);
@@ -95,7 +294,7 @@ namespace Menu {
                 case 3:
                     cout << "Enter username: ";
                     getline(cin, query);
-                    Account::searchAccount(query);
+                    searchPageMenu(username, query);
                     break;
                     
                 case 4:
@@ -109,7 +308,7 @@ namespace Menu {
                     
 
                 case 6:
-                    profilePage(username);
+                    profilePageMenu(username);
                     break;
 
                 case 0:
