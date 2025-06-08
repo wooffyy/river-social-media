@@ -198,6 +198,15 @@ namespace Account {
             stringstream ss(line);
             User u;
             ss >> u.id >> u.username >> u.password;
+            string rawBio;
+            getline(ss, rawBio);
+            if (rawBio.size() > 0 && rawBio[0] == ' ')
+                rawBio.erase(0, 1);
+            if (rawBio.empty())
+                u.bio = "no bio";
+            else
+                u.bio = rawBio;
+            
             userList.push_back(u);
         }
         file.close();
@@ -214,7 +223,7 @@ namespace Account {
         }
 
         for (auto& u : userList) {
-            file << u.id << " " << u.username << " " << u.password << "\n";
+            file << u.id << " " << u.username << " " << u.password << " " << u.bio << "\n";
         }
         file.close();
     }
@@ -243,16 +252,21 @@ namespace Account {
         cout << "\n=== Registrasi Akun ===\n";
         cout << "Username: ";
         cin >> newUser.username;
-
         // Cek apakah username sudah digunakan
         if (binarySearchUser(newUser.username) != -1) {
             cout << "Username sudah digunakan.\n";
             return;
         }
-    
-        cout << "Password: ";
-        cin >> newUser.password;
-        
+        // Validasi panjang password 8-20 karakter
+        while (true) {
+            cout << "Password (8-20 karakter): ";
+            cin >> newUser.password;
+            if (newUser.password.length() < 8 || newUser.password.length() > 20) {
+                cout << "Password harus antara 8 hingga 20 karakter. Silakan ulangi.\n";
+            } else {
+                break;
+            }
+        }        
         // Membuat id untuk user baru
         if (userList.empty()) {
             newUser.id = 1;
@@ -264,14 +278,12 @@ namespace Account {
                 }
             }
             newUser.id = lastId + 1;
-        }
-
+        }        
         // Menambahkan user baru ke dalam vector
-        userList.push_back(newUser);
-        
+        userList.push_back(newUser);       
         // Mengurutkan user berdasarkan urutan abjad (A-Z)
         sort(userList.begin(), userList.end(), compareUsers);
-        // Memasukkan useer baru ke dalam tree
+        // Memasukkan user baru ke dalam tree
         insertUserBST(newUser);
         // Simpan user ke dalam file 
         saveUsers();
@@ -390,8 +402,10 @@ namespace Account {
         int choice;
         do {
             cout << "\n=== Profil Anda ===\n";
+            cout << "Username: @" << user.username << "\n";
+            cout << "Bio   : " << user.bio << "\n";
             cout << "1. Riwayat Post" << endl;
-            cout << "2. Ubah Password" << endl;
+            cout << "2. Ubah Profile (Username/Password/Bio)" << endl;
             cout << "3. Statistik Akun" << endl;
             cout << "0. Kembali" << endl;
             cout << ">>  ";
@@ -410,7 +424,6 @@ namespace Account {
                 system("clear");
             #endif
 
-
             if (choice == 1){
                 // Menampilkan riwayat post
                 ifstream file("users/" + user.username + "/posts.csv");
@@ -422,22 +435,85 @@ namespace Account {
                     string line;
                     while (getline(file, line)) {
                         stringstream ss(line);
-                        string id_str, username, content, likes_str;
+                        string id_str, usr, content, likes_str;
                         getline(ss, id_str, ',');
-                        getline(ss, username, ',');
+                        getline(ss, usr, ',');
                         getline(ss, content, ',');
                         getline(ss, likes_str, ',');
                         cout << "[" << id_str << "] Content: " << content << " [Likes: " << likes_str << "]" << endl;
                     }
                 file.close();
             } else if (choice == 2) {
+                int idx = binarySearchUser(user.username);
+                if (idx == -1) {
+                    cout << "Error: user tidak ditemukan.\n";
+                    break;
+                }
+
+                // Mengubah username
+                cout << "\n-- GANTI USERNAME --\n";
+                cout << "Username saat ini : @" << userList[idx].username << "\n";
+                cout << "Masukkan username baru (ketik '-' untuk tidak ganti): ";
+                string newUsername;
+                cin >> newUsername;
+                if (newUsername != "-" && newUsername != userList[idx].username) {
+                    if (binarySearchUser(newUsername) != -1) {
+                        cout << "Username sudah dipakai orang lain. Lewatkan perubahan username.\n";
+                    } else {
+                        string oldUsername = userList[idx].username;
+                        userList[idx].username = newUsername;
+                        // (A) Rename folder users/oldUsername → users/newUsername
+                        // (B) Update followGraph: ganti key dan nama di set
+                        // (C) Update semua entri di post_data.txt kecuali notif/act files
+                        // (D) Simpan follow_data.txt dan post_data.txt setelah pergantian
+                        cout << "Username berhasil diubah: @" << oldUsername
+                             << " → @" << newUsername << "\n";
+                    }
+                } else {
+                    cout << "Mengabaikan perubahan username.\n";
+                }
+
                 // Mengubah password
+                cout << "\n-- GANTI PASSWORD --\n";
+                cout << "(Ketik '-' jika tidak ingin mengganti)\n";
+                cout << "Masukkan password baru (8–20 karakter): ";
                 string newPassword;
-                cout << "Masukkan password baru: ";
                 cin >> newPassword;
-                userList[binarySearchUser(user.username)].password = newPassword;
+                if (newPassword != "-") {
+                    if (newPassword.length() < 8 || newPassword.length() > 20) {
+                        cout << "Password tidak valid (harus 8–20 karakter). Lewatkan perubahan password.\n";
+                    } else {
+                        userList[idx].password = newPassword;
+                        cout << "Password berhasil diubah.\n";
+                    }
+                } else {
+                    cout << "Mengabaikan perubahan password.\n";
+                }
+
+                // Mengubah bio
+                cout << "\n-- GANTI BIO --\n";
+                cout << "Bio saat ini:\n";
+                cout << userList[idx].bio << "\n\n";
+                cout << "Masukkan bio baru (ketik '-' untuk tidak ganti, kosong untuk 'no bio'):\n";
+                string newBio;
+                getline(cin, newBio);
+                if (newBio != "-") {
+                    if (newBio.length() > 100) {
+                        cout << "Bio terlalu panjang (maksimal 100 karakter). Lewatkan perubahan bio.\n";
+                    } else if (newBio.empty()) {
+                        userList[idx].bio = "no bio";
+                        cout << "Bio di‐reset ke 'no bio'.\n";
+                    } else {
+                        userList[idx].bio = newBio;
+                        cout << "Bio berhasil diperbarui.\n";
+                    }
+                } else {
+                    cout << "Mengabaikan perubahan bio.\n";
+                }
+
+                // Simpan semua perubahan ke user_data.txt
                 saveUsers();
-                cout << "Password berhasil diubah!\n";
+
             } else if (choice == 3) {
                 // Melihat statistik akun
                 double totalPosts = countStats<double>(user.username, "posts");
@@ -451,7 +527,7 @@ namespace Account {
             } else {
                 cout << "Pilihan tidak valid. Silakan coba lagi.\n";
             }
-        } while(choice != 4);
+        } while(choice != 0);
 
     }
 }

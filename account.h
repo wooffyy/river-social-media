@@ -11,6 +11,12 @@ struct User {
     int id;
     string username;
     string password;
+    string bio;
+    // Konstruktor default dan konstruktor dengan parameter
+    User() 
+        : id(0), username(""), password(""), bio("Empty") {}
+    User(int _id, const string& _user, const string& _pass, const string& _bio = "Empty")
+        : id(_id), username(_user), password(_pass), bio(_bio) {}
 };
 
 namespace Account {
