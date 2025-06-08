@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include "notify.h"
 
 using namespace std;
 
@@ -73,6 +74,8 @@ void followUser(const string& from, const string& to) {
     followGraph[from].insert(to);
     saveFollowGraph();
     cout << "Kamu sekarang mengikuti @" << to << "!\n";
+
+    Notify::followNotif(from, to);
 }
 
 // Unfollow user
