@@ -145,4 +145,17 @@ namespace Notify {
         notifQueue.push(n);
         saveNotif(toUser, notifQueue);
     }
+    void followNotif(const string& fromUser, const string& toUser) {
+        if (fromUser == toUser) return;
+
+        Notif n;
+        n.message = "@" + fromUser + " mulai mengikuti kamu.";
+        n.timestamp = River::getTime();
+        n.is_checked = false;
+
+        queue<Notif> notifQueue;
+        loadNotif(toUser, notifQueue);
+        notifQueue.push(n);
+        saveNotif(toUser, notifQueue);
+    }
 }
