@@ -6,6 +6,8 @@
 #include "notify.h"
 #include "follow.h"
 #include "activity.h"
+#include "whirlpool.h"
+
 #ifdef _WIN32
     #include <direct.h>
     #define CREATE_DIRECTORY(dir) _mkdir(dir)
@@ -106,7 +108,8 @@ namespace Menu {
 
             // Tampilkan header
             cout << currentUsername << "         " << followers << " Follower       " << following << " Following         " << postCount << " Posts\n";
-            cout << "Bio: " << Account::userList[Account::binarySearchUser(currentUsername)].bio << "\n";
+            cout << endl;
+            cout << "~ " << Account::userList[Account::binarySearchUser(currentUsername)].bio << "\n";
             cout << "--------------------------------------------------------\n";
 
             // Menu
@@ -129,34 +132,56 @@ namespace Menu {
                 River::showFeedForUser(currentUsername, currentUsername);
             } else if (choice == 2) {
                 // Edit Profile
+                int editChoice;
                 cout << "Edit Profile:\n";
+                cout << "1. Edit Password\n";
+                cout << "2. Edit Bio\n";
+                cout << "0. Back\n";
+                cout << ">> ";
 
-                cout << "Masukkan password baru (8-20 karakter): ";
-                string newPassword = Account::inputPasswordHidden();
-                if (newPassword.length() < 8 || newPassword.length() > 20) {
-                    cout << "Password harus antara 8 hingga 20 karakter. Silakan ulangi.\n";
+                if (!(cin >> editChoice)) {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     continue;
                 }
-                
-                cout << "Bio Anda: " << Account::userList[Account::binarySearchUser(currentUsername)].bio << "\n";
-                cout << "Masukkan bio baru (Maksimal 100 karakter):\n";
-                string newBio;
-                getline(cin, newBio);
-                if (newBio.empty() || newBio == "Empty") {
-                    newBio = "Empty";
-                    cout << "Bio di-reset ke 'Empty'.\n";
-                } else if (newBio.length() > 100) {
-                    cout << "Bio terlalu panjang. Silahkan ulangi.\n";
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+                if (editChoice == 1) {
+                    cout << "Masukkan password baru (8-20 karakter): ";
+                    string newPassword = Account::inputPasswordHidden();
+                    if (newPassword.length() < 8 || newPassword.length() > 20) {
+                        cout << "Password harus antara 8 hingga 20 karakter. Silakan ulangi.\n";
+                        continue;
+                    }
+                    // Update user_data.txt
+                    int idx = Account::binarySearchUser(currentUsername);
+                    Account::userList[idx].password = newPassword;    
+                    Account::saveUsers();
+
+                    cout << "Profile berhasil diperbarui!\n";   
+                    
+                } else if (editChoice == 2) {
+                    cout << "Bio Anda: " << Account::userList[Account::binarySearchUser(currentUsername)].bio << "\n";
+                    cout << "Masukkan bio baru (Maksimal 100 karakter):\n";
+                    string newBio;
+                    getline(cin, newBio);
+                    if (newBio.empty() || newBio == "Empty") {
+                        newBio = "Empty";
+                        cout << "Bio di-reset ke 'Empty'.\n";
+                    } else if (newBio.length() > 100) {
+                        cout << "Bio terlalu panjang. Silahkan ulangi.\n";
+                        continue;
+                    }
+                    // Update user_data.txt
+                    int idx = Account::binarySearchUser(currentUsername);
+                    Account::userList[idx].bio = newBio;    
+                    Account::saveUsers();
+                    
+                    cout << "Profile berhasil diperbarui!\n";
+
+                } else if (editChoice == 0) {
                     continue;
                 }
-
-                // Update user_data.txt
-                int idx = Account::binarySearchUser(currentUsername);
-                Account::userList[idx].password = newPassword;
-                Account::userList[idx].bio = newBio;
-                Account::saveUsers();
-                
-                cout << "Profile berhasil diperbarui!\n";   
             } else if (choice == 3) {
                 // Friend Suggestion (BFS)
                 cout << "Friend Suggestion:\n";
@@ -212,7 +237,7 @@ namespace Menu {
         int choice;
         bool logout = false;
         string query;
-        
+
         do {
             cout << "\n=== RIVER - @" << username << " ===\n";
             cout << "1. Create Post\n";
@@ -221,67 +246,67 @@ namespace Menu {
             cout << "4. Notifications (" << unread << ")\n";
             cout << "5. Activity History\n";
             cout << "6. Profile Page\n";
+            cout << "7. Whirlpool\n"; // Tambah ini
             cout << "0. Logout\n";
             cout << ">> ";
-            
+
             if (!(cin >> choice)) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << ">> " << "\n";
                 continue;
             }
-            
+
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            
-            if (choice < 0 || choice > 6) {
-                cout << ">> " << "\n";
+
+            if (choice < 0 || choice > 7) {
                 continue;
             }
-            
+
             system("cls");
 
             switch (choice) {
                 case 1:
                     createPost(username);
                     break;
-                    
+
                 case 2:
                     showFeed(username);
                     break;
-                
+
                 case 3:
                     cout << "Enter username: ";
                     getline(cin, query);
-                    searchPageMenu(username, query);
+                    searchPageMenu(username, query); 
                     break;
-                    
+
                 case 4:
                     showNotifications(username);
-
                     break;
-                    
+
                 case 5:
                     showActivities(username);
                     break;
-                    
 
                 case 6:
                     profilePageMenu(username);
+                    break;
+
+                case 7:
+                    showWhirlpoolMenu(username); 
                     break;
 
                 case 0:
                     cout << "Logging out...\n";
                     logout = true;
                     break;
-                    
+
                 default:
                     cout << "Invalid choice. Please try again.\n";
                     break;
             }
         } while (!logout);
     }
-    
-    // Fungsi untuk menampilkan menu login
+
     void loginMenu() {
         int choice;
         bool exit = false;
@@ -341,6 +366,8 @@ int main() {
 
     // Memuat user kemudian membuat BST
     Account::loadUsersWithBST();
+
+    buildHashtagIndexFromPostData();
 
     // Memanggil menu login
     Menu::loginMenu();

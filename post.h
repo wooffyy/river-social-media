@@ -15,6 +15,8 @@ struct Post {
     Post *left, *right;
 };
 
+void showPostByTag(const string& currentUsername, const string& hashtag);
+
 namespace River {
     Post* createPost(string username);
     bool sortbylike(const Post* a, const Post* b);

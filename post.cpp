@@ -7,12 +7,90 @@
 #include <limits>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 #include "post.h" 
 #include "follow.h" 
 #include "account.h"
 #include "activity.h"
 #include "notify.h"
+#include "whirlpool.h"
 using namespace std;
+
+
+void showPostByTag(const string& currentUsername, const string& hashtag) {
+    using namespace River;
+    extern unordered_map<string, struct AVLNode*> hashtagIndex; // akses global
+    
+    auto it = hashtagIndex.find(hashtag);
+    if (it == hashtagIndex.end() || it->second == nullptr) {
+        cout << "Tidak ada post untuk #" << hashtag << endl;
+        cout << "[Enter untuk kembali]"; cin.get();
+        return;
+    }
+    vector<int> postIDs;
+    inOrderTraversal(it->second, postIDs); 
+    if (postIDs.empty()) {
+        cout << "Tidak ada post untuk #" << hashtag << endl;
+        cout << "[Enter untuk kembali]"; cin.get();
+        return;
+    }
+    ifstream file("post_data.txt");
+    if (!file) {
+        cout << "Gagal membuka file post_data.txt!\n";
+        return;
+    }
+    vector<Post*> feed;
+    string line;
+    bool isFirstLine = true;
+    while (getline(file, line)) {
+        if (isFirstLine) {
+            isFirstLine = false;
+            continue;
+        }
+        if (line.empty()) continue;
+        stringstream ss(line);
+        Post* post = new Post();
+        string temp;
+        getline(ss, temp, ',');
+        int postID = stoi(temp);
+        // Cek apakah postID ada di postIDs
+        if (find(postIDs.begin(), postIDs.end(), postID) == postIDs.end()) {
+            delete post;
+            continue;
+        }
+        post->id = postID;
+        getline(ss, post->username, ',');
+        getline(ss, post->content, ',');
+        getline(ss, temp, ',');
+        post->likes = stoi(temp);
+        post->left = nullptr;
+        post->right = nullptr;
+        feed.push_back(post);
+    }
+    file.close();
+    // Buat doubly linked list
+    Post* head = nullptr;
+    Post* tail = nullptr;
+    for (Post* p : feed) {
+        if (head == nullptr) {
+            head = tail = p;
+        } else {
+            tail->right = p;
+            p->left = tail;
+            tail = p;
+        }
+    }
+    if (head != nullptr) {
+        feedNavi(head, currentUsername);
+    } else {
+        cout << "Tidak ada post untuk #" << hashtag << endl;
+        cout << "[Enter untuk kembali]"; cin.get();
+    }
+    // Cleanup
+    for (Post* p : feed) {
+        delete p;
+    }
+}
 
 namespace River {
 
@@ -109,6 +187,7 @@ namespace River {
         feedPost.close();
 
         cout << "Post berhasil dibuat!\n";
+        buildHashtagIndexFromPostData();
         return newPost;
     }
 
@@ -269,7 +348,7 @@ namespace River {
             delete p;
         }
     }
-    
+
     void updateUserPost(Post* post) {
         string postFile = "users/" + post->username + "/posts.csv";
         ifstream file(postFile);
