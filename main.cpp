@@ -106,7 +106,7 @@ namespace Menu {
 
             // Tampilkan header
             cout << currentUsername << "         " << followers << " Follower       " << following << " Following         " << postCount << " Posts\n";
-            cout << "\nBio (beta)\n";
+            cout << "Bio: " << Account::userList[Account::binarySearchUser(currentUsername)].bio << "\n";
             cout << "--------------------------------------------------------\n";
 
             // Menu
@@ -130,75 +130,33 @@ namespace Menu {
             } else if (choice == 2) {
                 // Edit Profile
                 cout << "Edit Profile:\n";
-                cout << "Masukkan username baru: ";
-                string newUsername;
-                getline(cin, newUsername);
 
-                if (Account::binarySearchUser(newUsername) != -1) {
-                    cout << "Username sudah digunakan!\n";
+                cout << "Masukkan password baru (8-20 karakter): ";
+                string newPassword = Account::inputPasswordHidden();
+                if (newPassword.length() < 8 || newPassword.length() > 20) {
+                    cout << "Password harus antara 8 hingga 20 karakter. Silakan ulangi.\n";
+                    continue;
+                }
+                
+                cout << "Bio Anda: " << Account::userList[Account::binarySearchUser(currentUsername)].bio << "\n";
+                cout << "Masukkan bio baru (Maksimal 100 karakter):\n";
+                string newBio;
+                getline(cin, newBio);
+                if (newBio.empty() || newBio == "Empty") {
+                    newBio = "Empty";
+                    cout << "Bio di-reset ke 'Empty'.\n";
+                } else if (newBio.length() > 100) {
+                    cout << "Bio terlalu panjang. Silahkan ulangi.\n";
                     continue;
                 }
 
-                cout << "Masukkan password baru: ";
-                string newPassword;
-                getline(cin, newPassword);
-
                 // Update user_data.txt
                 int idx = Account::binarySearchUser(currentUsername);
-                Account::userList[idx].username = newUsername;
                 Account::userList[idx].password = newPassword;
+                Account::userList[idx].bio = newBio;
                 Account::saveUsers();
-
-                // Rename folder
-                string oldFolder = "users/" + currentUsername;
-                string newFolder = "users/" + newUsername;
-                rename(oldFolder.c_str(), newFolder.c_str());
-
-                // Update followGraph
-                auto it = followGraph.find(currentUsername);
-                if (it != followGraph.end()) {
-                    followGraph[newUsername] = std::move(it->second);
-                    followGraph.erase(it);
-                }
-                for (auto& pair : followGraph) {
-                    if (pair.second.erase(currentUsername)) {
-                        pair.second.insert(newUsername);
-                    }
-                }
-                saveFollowGraph();
-
-                // Update post_data.txt
-                ifstream infile("post_data.txt");
-                ofstream outfile("post_data_tmp.txt");
-                string line;
-                bool isFirstLine = true;
-                while (getline(infile, line)) {
-                    if (isFirstLine) {
-                        outfile << line << "\n";
-                        isFirstLine = false;
-                        continue;
-                    }
-                    stringstream ss(line);
-                    string id, username, content, likes;
-                    getline(ss, id, ',');
-                    getline(ss, username, ',');
-                    getline(ss, content, ',');
-                    getline(ss, likes, ',');
-                    if (username == currentUsername) {
-                        username = newUsername;
-                    }
-                    outfile << id << "," << username << "," << content << "," << likes << "\n";
-                }
-                infile.close();
-                outfile.close();
-                remove("post_data.txt");
-                rename("post_data_tmp.txt", "post_data.txt");
-
-                cout << "Profile berhasil diperbarui!\n";
-
-                // Update currentUsername di sini kalau kamu ingin biar update terus (optional)
-                // currentUsername = newUsername;
-                break; // biar balik ke menu utama
+                
+                cout << "Profile berhasil diperbarui!\n";   
             } else if (choice == 3) {
                 // Friend Suggestion (BFS)
                 cout << "Friend Suggestion:\n";

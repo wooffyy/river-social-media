@@ -8,9 +8,12 @@
 #include "account.h"
 // Untuk membuat direktori baru
 #ifdef _WIN32
+    #include <conio.h>
     #include <direct.h>
     #define CREATE_DIRECTORY(dir) _mkdir(dir)
 #else
+    #include <termios.h>
+    #include <unistd.h>
     #include <sys/types.h>
     #include <sys/stat.h>
     #define CREATE_DIRECTORY(dir) mkdir(dir, 0777)
@@ -178,7 +181,6 @@ namespace Account {
             return false;
         }
         actFile.close();
-        cout << username << " berhasil dibuat!\n";
         return true;
     }
     
@@ -203,7 +205,7 @@ namespace Account {
             if (rawBio.size() > 0 && rawBio[0] == ' ')
                 rawBio.erase(0, 1);
             if (rawBio.empty())
-                u.bio = "no bio";
+                u.bio = "Empty";
             else
                 u.bio = rawBio;
             
@@ -245,6 +247,49 @@ namespace Account {
         return a.username < b.username;
     }
 
+    // Fungsi untuk membaca satu karakter tanpa men‐echo (Windows/Linux)
+    char getch_noecho() {
+    #ifdef _WIN32
+        return _getch();
+    #else
+        char ch;
+        struct termios oldt, newt;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        read(STDIN_FILENO, &ch, 1);
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        return ch;
+    #endif
+    }
+
+    // Membaca password, menampilkan '*' setiap kali user mengetik karakter
+    string inputPasswordHidden() {
+        string password;
+        char ch;
+        while (true) {
+            ch = getch_noecho();
+            // Enter (Windows:\r, Linux:\n)
+    #ifdef _WIN32
+            if (ch == '\r') break;
+    #else
+            if (ch == '\n') break;
+    #endif
+            if (ch == '\b' || ch == 127) { // backspace
+                if (!password.empty()) {
+                    password.pop_back();
+                    cout << "\b \b" << flush;
+                }
+            } else {
+                password.push_back(ch);
+                cout << '*' << flush;
+            }
+        }
+        cout << endl;
+        return password;
+    }
+
     // Fungsi untuk mengatur alur dan kerja fitur Sign Up
     void signUp() {
         // Alokasi memori
@@ -260,7 +305,7 @@ namespace Account {
         // Validasi panjang password 8-20 karakter
         while (true) {
             cout << "Password (8-20 karakter): ";
-            cin >> newUser.password;
+            newUser.password = inputPasswordHidden();
             if (newUser.password.length() < 8 || newUser.password.length() > 20) {
                 cout << "Password harus antara 8 hingga 20 karakter. Silakan ulangi.\n";
             } else {
@@ -308,7 +353,7 @@ namespace Account {
             return nullptr;
         }
         cout << "Password: ";
-        cin >> password;
+        password = inputPasswordHidden();
         if (userList[idx].password != password) {
             cout << "Password salah.\n";
             return nullptr;
@@ -397,137 +442,4 @@ namespace Account {
         file.close();
     }
 
-    // Fungsi untuk mengatur alur dan kerja fitur Profile Page
-    void profilePage(const User& user) {
-        int choice;
-        do {
-            cout << "\n=== Profil Anda ===\n";
-            cout << "Username: @" << user.username << "\n";
-            cout << "Bio   : " << user.bio << "\n";
-            cout << "1. Riwayat Post" << endl;
-            cout << "2. Ubah Profile (Username/Password/Bio)" << endl;
-            cout << "3. Statistik Akun" << endl;
-            cout << "0. Kembali" << endl;
-            cout << ">>  ";
-            if (!(cin >> choice)) {
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "Invalid input. Please enter a number.\n";
-                continue;
-            }
-
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-            #ifdef _WIN32
-                system("cls");
-            #else
-                system("clear");
-            #endif
-
-            if (choice == 1){
-                // Menampilkan riwayat post
-                ifstream file("users/" + user.username + "/posts.csv");
-                if (!file) {
-                    cout << "Gagal membuka file posts.csv untuk user " << user.username << "!\n";
-                    return;
-                }
-                    cout << "====== Riwayat Post ======\n";
-                    string line;
-                    while (getline(file, line)) {
-                        stringstream ss(line);
-                        string id_str, usr, content, likes_str;
-                        getline(ss, id_str, ',');
-                        getline(ss, usr, ',');
-                        getline(ss, content, ',');
-                        getline(ss, likes_str, ',');
-                        cout << "[" << id_str << "] Content: " << content << " [Likes: " << likes_str << "]" << endl;
-                    }
-                file.close();
-            } else if (choice == 2) {
-                int idx = binarySearchUser(user.username);
-                if (idx == -1) {
-                    cout << "Error: user tidak ditemukan.\n";
-                    break;
-                }
-
-                // Mengubah username
-                cout << "\n-- GANTI USERNAME --\n";
-                cout << "Username saat ini : @" << userList[idx].username << "\n";
-                cout << "Masukkan username baru (ketik '-' untuk tidak ganti): ";
-                string newUsername;
-                cin >> newUsername;
-                if (newUsername != "-" && newUsername != userList[idx].username) {
-                    if (binarySearchUser(newUsername) != -1) {
-                        cout << "Username sudah dipakai orang lain. Lewatkan perubahan username.\n";
-                    } else {
-                        string oldUsername = userList[idx].username;
-                        userList[idx].username = newUsername;
-                        // (A) Rename folder users/oldUsername → users/newUsername
-                        // (B) Update followGraph: ganti key dan nama di set
-                        // (C) Update semua entri di post_data.txt kecuali notif/act files
-                        // (D) Simpan follow_data.txt dan post_data.txt setelah pergantian
-                        cout << "Username berhasil diubah: @" << oldUsername
-                             << " → @" << newUsername << "\n";
-                    }
-                } else {
-                    cout << "Mengabaikan perubahan username.\n";
-                }
-
-                // Mengubah password
-                cout << "\n-- GANTI PASSWORD --\n";
-                cout << "(Ketik '-' jika tidak ingin mengganti)\n";
-                cout << "Masukkan password baru (8–20 karakter): ";
-                string newPassword;
-                cin >> newPassword;
-                if (newPassword != "-") {
-                    if (newPassword.length() < 8 || newPassword.length() > 20) {
-                        cout << "Password tidak valid (harus 8–20 karakter). Lewatkan perubahan password.\n";
-                    } else {
-                        userList[idx].password = newPassword;
-                        cout << "Password berhasil diubah.\n";
-                    }
-                } else {
-                    cout << "Mengabaikan perubahan password.\n";
-                }
-
-                // Mengubah bio
-                cout << "\n-- GANTI BIO --\n";
-                cout << "Bio saat ini:\n";
-                cout << userList[idx].bio << "\n\n";
-                cout << "Masukkan bio baru (ketik '-' untuk tidak ganti, kosong untuk 'no bio'):\n";
-                string newBio;
-                getline(cin, newBio);
-                if (newBio != "-") {
-                    if (newBio.length() > 100) {
-                        cout << "Bio terlalu panjang (maksimal 100 karakter). Lewatkan perubahan bio.\n";
-                    } else if (newBio.empty()) {
-                        userList[idx].bio = "no bio";
-                        cout << "Bio di‐reset ke 'no bio'.\n";
-                    } else {
-                        userList[idx].bio = newBio;
-                        cout << "Bio berhasil diperbarui.\n";
-                    }
-                } else {
-                    cout << "Mengabaikan perubahan bio.\n";
-                }
-
-                // Simpan semua perubahan ke user_data.txt
-                saveUsers();
-
-            } else if (choice == 3) {
-                // Melihat statistik akun
-                double totalPosts = countStats<double>(user.username, "posts");
-                int totalLikes = countStats<int>(user.username, "likes");
-                cout << "=== Statistik Akun ===\n";
-                cout << "Total Post: " << totalPosts << endl;
-                cout << "Total Likes: " << totalLikes << endl;
-            } else if (choice == 0) {
-                cout << "Kembali ke menu utama.\n";
-                return;
-            } else {
-                cout << "Pilihan tidak valid. Silakan coba lagi.\n";
-            }
-        } while(choice != 0);
-
-    }
 }

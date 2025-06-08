@@ -34,11 +34,12 @@ namespace Account {
     bool compareUsers(const User& a, const User& b);
     void saveUsers();
     int binarySearchUser(const std::string& username);
+    char getch_noecho();
+    string inputPasswordHidden();
     void signUp();
     User* login();
     bool create_user_dir(const string& username);
     void searchAccount(const string& username);
-    void profilePage(const User& user);
 
     template <typename T>
     T countStats(const string& username, const string& statType);
