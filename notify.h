@@ -25,6 +25,8 @@ namespace Notify {
     // Tampilan dan statistik
     void showNotif(const string& username);
     int countUnreadNotif(const string& username); // baru
+    void followNotif(const string& fromUser, const string& toUser);
+
 }
 
 #endif
