@@ -42,7 +42,7 @@ namespace Menu {
     void searchPageMenu(const string& currentUsername, const string& targetUsername) {
         int idx = Account::findUserBST(targetUsername);
         if (idx == -1) {
-            cout << "Akun tidak ditemukan.\n";
+            cout << "User not found.\n";
             return;
         }
 
@@ -54,7 +54,7 @@ namespace Menu {
             #endif
 
             cout << targetUsername << "\n";
-            cout << "1. Lihat Post\n";
+            cout << "1. View post\n";
             cout << "2. " << (isFollowing(currentUsername, targetUsername) ? "Unfollow" : "Follow") << "\n";
             cout << "0. Back\n";
             cout << ">> ";
@@ -71,7 +71,7 @@ namespace Menu {
                 River::showFeedForUser(currentUsername, targetUsername);
             } else if (choice == 2) {
                 if (currentUsername == targetUsername) {
-                    cout << "Tidak bisa follow diri sendiri.\n";
+                    cout << "You can't follow yourself :)\n";
                 } else if (isFollowing(currentUsername, targetUsername)) {
                     unfollowUser(currentUsername, targetUsername);
                 } else {
@@ -80,7 +80,7 @@ namespace Menu {
             } else if (choice == 0) {
                 break;
             } else {
-                cout << "Pilihan tidak valid.\n";
+                cout << "Invalid choice.\n";
             }
         }
     }
@@ -113,8 +113,8 @@ namespace Menu {
             cout << "--------------------------------------------------------\n";
 
             // Menu
-            cout << "1. View Post Anda\n";
-            cout << "2. Edit Profile Anda\n";
+            cout << "1. View Your Post \n";
+            cout << "2. Edit Your Profile \n";
             cout << "3. Friend Suggestion\n";
             cout << "0. Back\n";
             cout << ">> ";
@@ -147,10 +147,10 @@ namespace Menu {
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
                 if (editChoice == 1) {
-                    cout << "Masukkan password baru (8-20 karakter): ";
+                    cout << "Insert new password (8-20 characters): ";
                     string newPassword = Account::inputPasswordHidden();
                     if (newPassword.length() < 8 || newPassword.length() > 20) {
-                        cout << "Password harus antara 8 hingga 20 karakter. Silakan ulangi.\n";
+                        cout << "Password must be between 8 and 20 characters.\n";
                         continue;
                     }
                     // Update user_data.txt
@@ -158,18 +158,18 @@ namespace Menu {
                     Account::userList[idx].password = newPassword;    
                     Account::saveUsers();
 
-                    cout << "Profile berhasil diperbarui!\n";   
+                    cout << "Fresh from the oven!\n";   
                     
                 } else if (editChoice == 2) {
                     cout << "Bio Anda: " << Account::userList[Account::binarySearchUser(currentUsername)].bio << "\n";
-                    cout << "Masukkan bio baru (Maksimal 100 karakter):\n";
+                    cout << "Insert new bio (max 100 characters): \n";
                     string newBio;
                     getline(cin, newBio);
                     if (newBio.empty() || newBio == "Empty") {
                         newBio = "Empty";
-                        cout << "Bio di-reset ke 'Empty'.\n";
+                        cout << "Reset bio to'Empty'.\n";
                     } else if (newBio.length() > 100) {
-                        cout << "Bio terlalu panjang. Silahkan ulangi.\n";
+                        cout << "Bio must be less than 100 characters.\n";
                         continue;
                     }
                     // Update user_data.txt
@@ -177,7 +177,7 @@ namespace Menu {
                     Account::userList[idx].bio = newBio;    
                     Account::saveUsers();
                     
-                    cout << "Profile berhasil diperbarui!\n";
+                    cout << "Fresh from the oven!\n";
 
                 } else if (editChoice == 0) {
                     continue;
@@ -209,19 +209,19 @@ namespace Menu {
                 }
 
                 if (suggestions.empty()) {
-                    cout << "Tidak ada saran teman.\n";
+                    cout << "No suggestions.\n";
                 } else {
-                    cout << "Saran Teman:\n";
+                    cout << "Friend Suggestions:\n";
                     for (const string& s : suggestions) {
                         cout << "- @" << s << "\n";
                     }
                 }
 
-                cout << "[Enter untuk kembali]"; cin.get();
+                cout << "[Enter to continue]"; cin.get();
             } else if (choice == 0) {
                 break;
             } else {
-                cout << "Pilihan tidak valid.\n";
+                cout << "Invalid choice.\n";
             }
         }   
     }
@@ -239,14 +239,16 @@ namespace Menu {
         string query;
 
         do {
-            cout << "\n=== RIVER - @" << username << " ===\n";
+            cout << "\n~~~~~~~~~~~~~~~~~~~~";
+            cout << "\nRIVER - @" << username;
+            cout << "\n~~~~~~~~~~~~~~~~~~~~\n";
             cout << "1. Create Post\n";
             cout << "2. View Feed\n";
             cout << "3. Search User\n";
             cout << "4. Notifications (" << unread << ")\n";
             cout << "5. Activity History\n";
             cout << "6. Profile Page\n";
-            cout << "7. Whirlpool\n"; // Tambah ini
+            cout << "7. Whirlpool\n"; 
             cout << "0. Logout\n";
             cout << ">> ";
 
@@ -312,7 +314,10 @@ namespace Menu {
         bool exit = false;
         
         do {
-            cout << "\n=== WELCOME TO RIVER ===\n";
+            cout << "\n~~~~~~~~~~~~~~~~~~~~~";
+            cout << "\n~~~     RIVER     ~~~";
+            cout << "\n~~~~~~~~~~~~~~~~~~~~~\n";
+            cout << "Welcome to the RIVER!\n";
             cout << "1. Login\n";
             cout << "2. Sign Up\n";
             cout << "0. Exit\n";

@@ -74,11 +74,11 @@ namespace Notify {
         }
 
         if (notifQueue.empty()) {
-            cout << "Tidak ada notifikasi.\n";
+            cout << "No unread notifications.\n";
             return;
         }
 
-        cout << "=== Notifikasi untuk @" << username << " ===\n";
+        cout << "~~~ Notifications for @" << username << " ~~~\n";
         queue<Notif> updatedQueue;
 
         while (!notifQueue.empty()) {
@@ -117,7 +117,7 @@ namespace Notify {
         }
 
         Notif n;
-        n.message = "@" + fromUser + " memberi like di post: \"" + shorten + "\"";
+        n.message = "@" + fromUser + " liked post: \"" + shorten + "\"";
         n.timestamp = River::getTime();
         n.is_checked = false;
 
@@ -136,7 +136,7 @@ namespace Notify {
         }
 
         Notif n;
-        n.message = "@" + fromUser + " memberi komentar di post: \"" + shorten + "\"";
+        n.message = "@" + fromUser + " commented on post: \"" + shorten + "\"";
         n.timestamp = River::getTime();
         n.is_checked = false;
 
@@ -149,7 +149,7 @@ namespace Notify {
         if (fromUser == toUser) return;
 
         Notif n;
-        n.message = "@" + fromUser + " mulai mengikuti kamu.";
+        n.message = "@" + fromUser + " started following you.";
         n.timestamp = River::getTime();
         n.is_checked = false;
 

@@ -294,20 +294,20 @@ namespace Account {
     void signUp() {
         // Alokasi memori
         User newUser;
-        cout << "\n=== Registrasi Akun ===\n";
+        cout << "\n~~~ Account Registration ~~~\n";
         cout << "Username: ";
         cin >> newUser.username;
         // Cek apakah username sudah digunakan
         if (binarySearchUser(newUser.username) != -1) {
-            cout << "Username sudah digunakan.\n";
+            cout << "Username is already taken.\n";
             return;
         }
         // Validasi panjang password 8-20 karakter
         while (true) {
-            cout << "Password (8-20 karakter): ";
+            cout << "Password (8-20 characters): ";
             newUser.password = inputPasswordHidden();
             if (newUser.password.length() < 8 || newUser.password.length() > 20) {
-                cout << "Password harus antara 8 hingga 20 karakter. Silakan ulangi.\n";
+                cout << "Password length must be between 8 and 20 characters.\n";
             } else {
                 break;
             }
@@ -334,31 +334,31 @@ namespace Account {
         saveUsers();
 
         if (create_user_dir(newUser.username)) {
-            cout << "Akun berhasil dibuat! Halo @" << newUser.username << endl;
+            cout << "Account created! Halo @" << newUser.username << endl;
         } else {
-            cout << "Gagal membuat akun. Silakan coba lagi.\n";
+            cout << "Failed to create account!.\n";
         }
     }
 
     // Fungsi untuk mengatur alur dan kerja fitur Login
     User* login() {
         string username, password;
-        cout << "\n=== Login ===\n";
+        cout << "\n~~~ Login ~~~\n";
         cout << "Username: ";
         cin >> username;
         // Mencari username
         int idx = binarySearchUser(username);
         if (idx == -1) {
-            cout << "Username tidak ditemukan.\n";
+            cout << "Username is not found.\n";
             return nullptr;
         }
         cout << "Password: ";
         password = inputPasswordHidden();
         if (userList[idx].password != password) {
-            cout << "Password salah.\n";
+            cout << "Password is incorrect.\n";
             return nullptr;
         }
-        cout << "Login berhasil! Selamat datang, " << userList[idx].username << "\n";
+        cout << "Login success! Hello, @" << userList[idx].username << "\n";
         return &userList[idx];
     }
 
@@ -418,10 +418,10 @@ namespace Account {
     void searchAccount(const string& username) {
         int idx = findUserBST(username);
         if (idx == -1) {
-            cout << "Akun tidak ditemukan.\n";
+            cout << "Username not found.\n";
             return;
         }
-        cout << "Akun ditemukan: \n";
+        cout << "User Found! \n";
         cout << "Username: " << userList[idx].username << "\n";
         cout << endl;
         ifstream file("users/" + userList[idx].username + "/posts.csv");

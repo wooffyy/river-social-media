@@ -62,18 +62,18 @@ void saveFollowGraph() {
 // Tambah follow
 void followUser(const string& from, const string& to) {
     if (from == to) {
-        cout << "Tidak bisa follow diri sendiri.\n";
+        cout << "You can't follow yourself :)\n";
         return;
     }
 
     if (isFollowing(from, to)) {
-        cout << "Kamu sudah follow @" << to << ".\n";
+        cout << "You're already following @" << to << ".\n";
         return;
     }
 
     followGraph[from].insert(to);
     saveFollowGraph();
-    cout << "Kamu sekarang mengikuti @" << to << "!\n";
+    cout << "You're now following @" << to << "!\n";
 
     Notify::followNotif(from, to);
 }
@@ -81,13 +81,13 @@ void followUser(const string& from, const string& to) {
 // Unfollow user
 void unfollowUser(const string& from, const string& to) {
     if (!isFollowing(from, to)) {
-        cout << "Kamu tidak mengikuti @" << to << ".\n";
+        cout << "You're not following @" << to << "anymore.\n";
         return;
     }
 
     followGraph[from].erase(to);
     saveFollowGraph();
-    cout << "Berhasil unfollow @" << to << ".\n";
+    cout << "You've unfollow @" << to << ".\n";
 }
 
 // Cek apakah from mengikuti to
@@ -101,11 +101,11 @@ bool isFollowing(const string& from, const string& to) {
 void showFollowing(const string& user) {
     auto it = followGraph.find(user);
     if (it == followGraph.end() || it->second.empty()) {
-        cout << "Kamu belum mengikuti siapa pun.\n";
+        cout << "Go Sociallize.\n";
         return;
     }
 
-    cout << "Kamu mengikuti:\n";
+    cout << "You're following:\n";
     for (const string& name : it->second) {
         cout << "- @" << name << "\n";
     }
@@ -121,11 +121,11 @@ void showFollowers(const string& user) {
     }
 
     if (followers.empty()) {
-        cout << "Belum ada yang mengikuti kamu.\n";
+        cout << "No one follows you.\n";
         return;
     }
 
-    cout << "Kamu diikuti oleh:\n";
+    cout << "You're followed by:\n";
     for (const string& name : followers) {
         cout << "- @" << name << "\n";
     }

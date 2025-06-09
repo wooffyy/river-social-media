@@ -39,7 +39,7 @@ namespace Activity {
         string file_name = "users/" + username + "/activity_stack.txt";
         ifstream file(file_name);
         if (!file) {
-            cout << "Belum ada aktivitas\n";
+            cout << "No activity yet\n";
             return true;
         }
 
@@ -109,7 +109,7 @@ namespace Activity {
         }
 
         if (actStack.empty()) {
-            cout << "Tidak ada aktivitas\n";
+            cout << "No activity yet\n";
             return;
         }
 
@@ -127,13 +127,13 @@ namespace Activity {
             cout << "[" << it->timestamp << "] ";
             switch (it->type) {
                 case LIKE:
-                    cout << "@" << username << " memberi like pada post dari @" << it->target_user << endl;
+                    cout << "@" << username << " liked a post from @" << it->target_user << endl;
                     break;
                 case COMMENT:
-                    cout << "@" << username << " memberi komentar pada post dari @" << it->target_user << endl;
+                    cout << "@" << username << " commented a post from @" << it->target_user << endl;
                     break;
                 case CREATE:
-                    cout << "@" << username << " membuat post baru" << endl;
+                    cout << "@" << username << " made a post" << endl;
                     break;
             }
         }
@@ -146,7 +146,7 @@ namespace Activity {
             cin >> choice;
             choice = tolower(choice);
             if (choice != 'x') {
-                cout << "Pilihan tidak valid\n";
+                cout << "Invalid input\n";
             }
         } while (choice != 'x');
     }

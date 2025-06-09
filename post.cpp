@@ -23,15 +23,15 @@ void showPostByTag(const string& currentUsername, const string& hashtag) {
     
     auto it = hashtagIndex.find(hashtag);
     if (it == hashtagIndex.end() || it->second == nullptr) {
-        cout << "Tidak ada post untuk #" << hashtag << endl;
-        cout << "[Enter untuk kembali]"; cin.get();
+        cout << "No post yet for #" << hashtag << endl;
+        cout << "[Enter to continue]"; cin.get();
         return;
     }
     vector<int> postIDs;
     inOrderTraversal(it->second, postIDs); 
     if (postIDs.empty()) {
-        cout << "Tidak ada post untuk #" << hashtag << endl;
-        cout << "[Enter untuk kembali]"; cin.get();
+        cout << "No post yet for #" << hashtag << endl;
+        cout << "[Enter to continue]"; cin.get();
         return;
     }
     ifstream file("post_data.txt");
@@ -83,8 +83,8 @@ void showPostByTag(const string& currentUsername, const string& hashtag) {
     if (head != nullptr) {
         feedNavi(head, currentUsername);
     } else {
-        cout << "Tidak ada post untuk #" << hashtag << endl;
-        cout << "[Enter untuk kembali]"; cin.get();
+        cout << "No post yet for #" << hashtag << endl;
+        cout << "[Enter to continue]"; cin.get();
     }
     // Cleanup
     for (Post* p : feed) {
@@ -156,7 +156,7 @@ namespace River {
         newPost->username = username;
         newPost->likes = 0;
 
-        cout << "Masukkan isi post: ";
+        cout << "What's on your mind today? >\n";
         getline(cin, newPost->content);
 
         string postFile = "users/" + username + "/posts.csv";
@@ -186,7 +186,7 @@ namespace River {
         feedPost << newPost->id << "," << newPost->username << "," << newPost->content << "," << newPost->likes << "\n";
         feedPost.close();
 
-        cout << "Post berhasil dibuat!\n";
+        cout << "Post created!\n";
         buildHashtagIndexFromPostData();
         return newPost;
     }
@@ -321,8 +321,8 @@ namespace River {
         file.close();
 
         if (feed.empty()) {
-            cout << "Tidak ada post dari @" << targetUsername << endl;
-            cout << "[Enter untuk kembali]"; cin.get();
+            cout << "No post found for @" << targetUsername << endl;
+            cout << "[Enter to continue]"; cin.get();
             return;
         }
 
@@ -392,7 +392,7 @@ namespace River {
         string filename = "comment_post_" + to_string(PostID) + ".csv";
         ifstream file(filename);
         if (!file) {
-            cout << "Belum ada komentar untuk post ini!\n";
+            cout << "No comments found for this post!\n";
             return;
         }
 
@@ -410,7 +410,7 @@ namespace River {
         file.close();
 
         if (!commentFound) {
-            cout << "Belum ada komentar untuk post ini!\n";
+            cout << "No comments found for this post!\n";
         }
     }
 
@@ -450,7 +450,8 @@ namespace River {
             #endif
 
             if (current == nullptr) {
-                cout << "Kamu telah mencapai akhir!\n";
+                cout << "You've reached the end of the world!\n";
+                cout << "Go and touch the grass ....";                 
                 break;
             }
 
@@ -484,11 +485,11 @@ namespace River {
                 if (hasLiked(current->id, currentUsername)) {
                     current->likes--;
                     removeLikeUser(current->id, currentUsername);
-                    cout << "Post di-unlike!\n";
+                    cout << "Unliked!\n";
                 } else {
                     current->likes++;
                     addLikeUser(current->id, currentUsername);
-                    cout << "Post sudah di-like!\n";
+                    cout << "Liked!\n";
                     Activity::recordLike(currentUsername, current->id, current->username);
                     Notify::likesNotif(currentUsername, current->username, current->id, current->content);
                 }
@@ -496,13 +497,13 @@ namespace River {
                 string comment;
                 showComments(current->id);
                 cout << "----------------------------------------------------------" << endl;
-                cout << "[T] untuk yap! , [X] untuk kembali : ";
+                cout << "[T] to yap! , [X] to cancel : ";
                 char comment_input;
                 cin >> comment_input;
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 char comment_inputLower = tolower(comment_input);
                 if (comment_inputLower == 't') {
-                    cout << "Tulis komentarmu:\n> ";
+                    cout << "Write your comment:\n> ";
                     getline(cin, comment);
 
                     string filename = "comment_post_" + to_string(current->id) + ".csv";
@@ -510,7 +511,7 @@ namespace River {
                     if (file.is_open()) {
                         file << currentUsername << "," << comment << "," << getTime() << "\n";
                         file.close();
-                        cout << "Komentar berhasil dikirim!\n";
+                        cout << "Yapped!\n";
                         Activity::recordComment(currentUsername, current->id, current->username);
                         Notify::commentNotif(currentUsername, current->username, current->id, current->content);
                     } else {
@@ -521,17 +522,17 @@ namespace River {
                 }
             } else if (lowerInput == 'f') {
                 if (currentUsername == current->username) {
-                    cout << "Tidak bisa follow diri sendiri.\n";
+                    cout << "You can't follow yourself :)\n";
                 } else if (isFollowing(currentUsername, current->username)) {
                     unfollowUser(currentUsername, current->username);
                 } else {
                     followUser(currentUsername, current->username);
                 }
             } else if (lowerInput == 'x') {
-                cout << "Keluar dari feed\n";
+                cout << "Leaving the feed...\n";
                 break;
             } else {
-                cout << "Input tidak valid!\n";
+                cout << "Invalid input!\n";
             }
         }
     }

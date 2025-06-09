@@ -227,11 +227,11 @@ void searchHashtagMenu(const string& currentUsername) {
 
     auto it = hashtagCount.find(query);
     if (it == hashtagCount.end()) {
-        cout << "Tidak ada bait #" << query << endl;
-        cout << "[Enter untuk kembali]"; cin.get();
+        cout << "No bait #" << query << endl;
+        cout << "[Enter to continue]"; cin.get();
         return;
     }
-    cout << "Strike! Bait ditemukan : \n";
+    cout << "Strike! Bait found : \n";
     cout << "\n#" << query << " - " << it->second << " post\n";
     cout << "----------------------------------\n";
     cout << "[V] View post          [X] Back\n";
