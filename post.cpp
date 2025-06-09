@@ -223,7 +223,12 @@ namespace River {
             getline(ss, post->username, ',');
             getline(ss, post->content, ',');
             getline(ss, temp, ',');
-            post->likes = stoi(temp);
+            try {
+                post->likes = stoi(temp);
+            } catch (const exception& e) {
+                post->likes = 0; // fallback default jika parsing gagal
+            }
+
 
             post->left = nullptr;
             post->right = nullptr;
