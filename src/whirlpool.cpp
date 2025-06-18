@@ -99,7 +99,7 @@ void buildHashtagIndexFromPostData() {
     hashtagIndex.clear();
     hashtagCount.clear();
 
-    ifstream file("post_data.txt");
+    ifstream file("data/post_data.txt");
     if (!file) return;
 
     string line;

@@ -15,7 +15,7 @@ unordered_map<string, unordered_set<string>> followGraph;
 // Load follow graph dari file
 void loadFollowGraph() {
     followGraph.clear();
-    ifstream file("follow_data.txt");
+    ifstream file("data/follow_data.txt");
     if (!file) return;
 
     string line;
@@ -40,7 +40,7 @@ void loadFollowGraph() {
 
 // Simpan follow graph ke file
 void saveFollowGraph() {
-    ofstream file("follow_data.txt");
+    ofstream file("data/follow_data.txt");
     if (!file) {
         cout << "Gagal menyimpan follow data!\n";
         return;
