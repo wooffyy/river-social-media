@@ -115,10 +115,10 @@ void buildHashtagIndexFromPostData() {
         string temp, username, content;
         int postID;
 
-        getline(ss, temp, ',');
+        getline(ss, temp, '|');
         postID = stoi(temp);
-        getline(ss, username, ',');
-        getline(ss, content, ',');
+        getline(ss, username, '|');
+        getline(ss, content, '|');
 
         // Parse hashtag dari content
         istringstream iss(content);

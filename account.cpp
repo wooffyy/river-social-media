@@ -159,9 +159,9 @@ namespace Account {
         } 
 
         // Membuat file post pribadi
-        ofstream postFile(userDIR + "/posts.csv", ios::app);
+        ofstream postFile(userDIR + "/posts.txt", ios::app);
         if (!postFile) {
-            cout << "Gagal membuat file posts.csv untuk user " << username << "!\n";
+            cout << "Gagal membuat file posts.txt untuk user " << username << "!\n";
             return false;
         }
         postFile.close();
@@ -334,7 +334,7 @@ namespace Account {
         saveUsers();
 
         if (create_user_dir(newUser.username)) {
-            cout << "Account created! Halo @" << newUser.username << endl;
+            cout << "Account created! Welcome @" << newUser.username << endl;
         } else {
             cout << "Failed to create account!.\n";
         }
@@ -372,7 +372,7 @@ namespace Account {
         // Menghitung likes
         if (statType == "likes") {
             int totalLikes = 0;
-            ifstream file("users/" + username + "/posts.csv");
+            ifstream file("users/" + username + "/posts.txt");
             if (!file) {
                 return 0;
             }
@@ -381,10 +381,10 @@ namespace Account {
             while (getline(file, line)) {
                 stringstream ss(line);
                 string id_str, user, content, likes_str;
-                getline(ss, id_str, ',');
-                getline(ss, user, ','); 
-                getline(ss, content, ',');
-                getline(ss, likes_str, ',');
+                getline(ss, id_str, '|');
+                getline(ss, user, '|'); 
+                getline(ss, content, '|');
+                getline(ss, likes_str, '|');
                 totalLikes += stoi(likes_str);
             }
             file.close();
@@ -399,7 +399,7 @@ namespace Account {
         // Menghitung total post
         if (statType == "posts") {
             double totalPosts = 0;
-            ifstream file("users/" + username + "/posts.csv");
+            ifstream file("users/" + username + "/posts.txt");
             if (!file) {
                 return 0;
             }
@@ -424,7 +424,7 @@ namespace Account {
         cout << "User Found! \n";
         cout << "Username: " << userList[idx].username << "\n";
         cout << endl;
-        ifstream file("users/" + userList[idx].username + "/posts.csv");
+        ifstream file("users/" + userList[idx].username + "/posts.txt");
         if (!file) {
             return;
         }
@@ -433,10 +433,10 @@ namespace Account {
         while (getline(file, line)) {
             stringstream ss(line);
             string id_str, username, content, likes_str;
-            getline(ss, id_str, ',');
-            getline(ss, username, ',');
-            getline(ss, content, ',');
-            getline(ss, likes_str, ',');
+            getline(ss, id_str, '|');
+            getline(ss, username, '|');
+            getline(ss, content, '|');
+            getline(ss, likes_str, '|');
             cout << "[" << id_str << "]  " << content << " [Likes: " << likes_str << "]" << endl;
         }
         file.close();

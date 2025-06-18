@@ -51,7 +51,7 @@ void showPostByTag(const string& currentUsername, const string& hashtag) {
         stringstream ss(line);
         Post* post = new Post();
         string temp;
-        getline(ss, temp, ',');
+        getline(ss, temp, '|');
         int postID = stoi(temp);
         // Cek apakah postID ada di postIDs
         if (find(postIDs.begin(), postIDs.end(), postID) == postIDs.end()) {
@@ -59,9 +59,9 @@ void showPostByTag(const string& currentUsername, const string& hashtag) {
             continue;
         }
         post->id = postID;
-        getline(ss, post->username, ',');
-        getline(ss, post->content, ',');
-        getline(ss, temp, ',');
+        getline(ss, post->username, '|');
+        getline(ss, post->content, '|');
+        getline(ss, temp, '|');
         post->likes = stoi(temp);
         post->left = nullptr;
         post->right = nullptr;
@@ -137,19 +137,27 @@ namespace River {
     Post* createPost(string username) {
         int globalID = 0;
         ifstream globalFile("post_data.txt");
-        string line, lastLine;
+        string line;
+        bool isFirstLine = true;
         while (getline(globalFile, line)) {
-            if (line.empty() || line.find("id,") != string::npos) continue;
-            lastLine = line;
+            if (isFirstLine) {
+                isFirstLine = false;
+                continue;
+            }
+            if (line.empty()) continue;
+        
+            stringstream ss(line);
+            string idStr;
+            getline(ss, idStr, '|');
+            try {
+                int id = stoi(idStr);
+                if (id > globalID) globalID = id;
+            } catch (...) {
+                continue; // skip jika parsing gagal
+            }
         }
         globalFile.close();
 
-        if (!lastLine.empty()) {
-            stringstream ss(lastLine);
-            string idStr;
-            getline(ss, idStr, ',');
-            globalID = stoi(idStr);
-        }
 
         Post* newPost = new Post();
         newPost->id = globalID + 1; 
@@ -159,14 +167,14 @@ namespace River {
         cout << "What's on your mind today? >\n";
         getline(cin, newPost->content);
 
-        string postFile = "users/" + username + "/posts.csv";
+        string postFile = "users/" + username + "/posts.txt";
         ofstream app_content(postFile, ios::app);
         if (!app_content) {
             cout << "Gagal membuka file untuk menulis!\n";
             delete newPost;
             return nullptr;
         }
-        app_content << newPost->id << "," << newPost->username << "," << newPost->content << "," << newPost->likes << "\n";
+        app_content << newPost->id << "|" << newPost->username << "|" << newPost->content << "|" << newPost->likes << "\n";
         app_content.close();
 
         ofstream feedPost("post_data.txt", ios::app);
@@ -183,7 +191,7 @@ namespace River {
             feedPost << "id,username,content,likes\n";  
         }
 
-        feedPost << newPost->id << "," << newPost->username << "," << newPost->content << "," << newPost->likes << "\n";
+        feedPost << newPost->id << "|" << newPost->username << "|" << newPost->content << "|" << newPost->likes << "\n";
         feedPost.close();
 
         cout << "Post created!\n";
@@ -213,16 +221,16 @@ namespace River {
             Post* post = new Post();
             string temp;
 
-            getline(ss, temp, ',');
+            getline(ss, temp, '|');
             try {
                 post->id = stoi(temp);
             } catch (...) {
                 delete post;
                 continue;
             }
-            getline(ss, post->username, ',');
-            getline(ss, post->content, ',');
-            getline(ss, temp, ',');
+            getline(ss, post->username, '|');
+            getline(ss, post->content, '|');
+            getline(ss, temp, '|');
             try {
                 post->likes = stoi(temp);
             } catch (const exception& e) {
@@ -266,9 +274,9 @@ namespace River {
             return;
         }
 
-        release << "id,username,content,likes\n";
+        release << "id|username|content|likes\n";
         for (Post* p : feed) {
-            release << p->id << "," << p->username << "," << p->content << "," << p->likes << "\n";
+            release << p->id << "|" << p->username << "|" << p->content << "|" << p->likes << "\n";
             updateUserPost(p);
         }
         release.close();
@@ -296,16 +304,16 @@ namespace River {
             Post* post = new Post();
             string temp;
 
-            getline(ss, temp, ',');
+            getline(ss, temp, '|');
             try {
                 post->id = stoi(temp);
             } catch (...) {
                 delete post;
                 continue;
             }
-            getline(ss, post->username, ',');
-            getline(ss, post->content, ',');
-            getline(ss, temp, ',');
+            getline(ss, post->username, '|');
+            getline(ss, post->content, '|');
+            getline(ss, temp, '|');
             post->likes = stoi(temp);
 
             post->left = nullptr;
@@ -355,10 +363,10 @@ namespace River {
     }
 
     void updateUserPost(Post* post) {
-        string postFile = "users/" + post->username + "/posts.csv";
+        string postFile = "users/" + post->username + "/posts.txt";
         ifstream file(postFile);
         if (!file) {
-            cout << "Gagal membuka file posts.csv untuk user " << post->username << "!\n";
+            cout << "Gagal membuka file posts.txt untuk user " << post->username << "!\n";
             return;
         }
 
@@ -367,9 +375,9 @@ namespace River {
         while (getline(file, line)) {
             stringstream ss(line);
             string idStr;
-            getline(ss, idStr, ',');
+            getline(ss, idStr, '|');
             if (!idStr.empty() && stoi(idStr) == post->id) {
-                posts.push_back(to_string(post->id) + "," + post->username + "," + post->content + "," + to_string(post->likes));
+                posts.push_back(to_string(post->id) + "|" + post->username + "|" + post->content + "|" + to_string(post->likes));
             } else {
                 posts.push_back(line);
             }
@@ -378,7 +386,7 @@ namespace River {
 
         ofstream outFile(postFile);
         if (!outFile) {
-            cout << "Gagal menulis ke file posts.csv untuk user " << post->username << "!\n";
+            cout << "Gagal menulis ke file posts.txt untuk user " << post->username << "!\n";
             return;
         }
 
@@ -389,7 +397,7 @@ namespace River {
     }
 
     void showComments(int PostID){
-        string filename = "comment_post_" + to_string(PostID) + ".csv";
+        string filename = "comment_post_" + to_string(PostID) + ".txt";
         ifstream file(filename);
         if (!file) {
             cout << "No comments found for this post!\n";
@@ -402,9 +410,9 @@ namespace River {
             commentFound = true;
             stringstream ss(line);
             string username, comment, date;
-            getline(ss, username, ',');
-            getline(ss, comment, ',');
-            getline(ss, date, ',');
+            getline(ss, username, '|');
+            getline(ss, comment, '|');
+            getline(ss, date, '|');
             cout << "@" << username << " (" << date << "): " << comment << endl;
         }
         file.close();
@@ -423,7 +431,7 @@ namespace River {
     }
 
     int countComments(int PostID){
-        string filename = "comment_post_" + to_string(PostID) + ".csv";
+        string filename = "comment_post_" + to_string(PostID) + ".txt";
         ifstream file(filename);
         if (!file) {
             return 0;
@@ -506,10 +514,10 @@ namespace River {
                     cout << "Write your comment:\n> ";
                     getline(cin, comment);
 
-                    string filename = "comment_post_" + to_string(current->id) + ".csv";
+                    string filename = "comment_post_" + to_string(current->id) + ".txt";
                     ofstream file(filename, ios::app);
                     if (file.is_open()) {
-                        file << currentUsername << "," << comment << "," << getTime() << "\n";
+                        file << currentUsername << "|" << comment << "|" << getTime() << "\n";
                         file.close();
                         cout << "Yapped!\n";
                         Activity::recordComment(currentUsername, current->id, current->username);

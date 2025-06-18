@@ -121,7 +121,7 @@ namespace Activity {
             tempStack.pop();
         }
 
-        cout << "Riwayat Aktivitas - @" << username << ":\n";
+        cout << "Activity History - @" << username << ":\n";
         int count = 0;
         for (auto it = reverseList.rbegin(); it != reverseList.rend() && count < 10; ++it, ++count) {
             cout << "[" << it->timestamp << "] ";

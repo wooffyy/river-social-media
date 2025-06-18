@@ -1,0 +1,7 @@
+king_prk:anggas_keren,bowo123,mr_j
+bowo123:jkw_661
+anggas_keren:mr_j,jkw_661
+jkw_661:bowo123
+mega_channn:mr_j
+fufufafa:bowo123,mr_j
+mr_j:jkw_661,king_prk,bowo123,mega_channn

@@ -211,7 +211,6 @@ namespace Menu {
                 if (suggestions.empty()) {
                     cout << "No suggestions.\n";
                 } else {
-                    cout << "Friend Suggestions:\n";
                     for (const string& s : suggestions) {
                         cout << "- @" << s << "\n";
                     }
@@ -371,6 +370,8 @@ int main() {
 
     // Memuat user kemudian membuat BST
     Account::loadUsersWithBST();
+
+    loadFollowGraph();
 
     buildHashtagIndexFromPostData();
 

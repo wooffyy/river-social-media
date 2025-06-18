@@ -1,1 +1,14 @@
-id,username,content,likes
+id|username|content|likes
+1|bowo123|Kita semua bisa berhasil sampe saat ini karena JKW #HidupJKW|7
+4|mr_j|mau masuk tapi pintu Lab nya terhalang layar :v|6
+2|mega_channn|Lagi rame #HidupJKW padahal JKW kalo ga ada saya, aduhhh kasian dah|4
+5|king_prk|#Liburan enaknya kemana yh?|3
+6|fufufafa|saya lagi bayangin @bowo123 mendaki sumeru trs pas di puncak dia mengibarkan bendera merah putih lalu berteriak "titiekk kembalilah kepadaku" wkwkwk|3
+3|king_prk|#SNBP cerdas, sangat rajin!|2
+8|jkw_661|Lagi rame #HidupJKW Tanggapan saya yo ndak tau kok tanya saya|3
+7|anggas_keren|AKHIRNYAAAAAA #Liburan |1
+9|jkw_661|#TimnasDay SEMANGAT GARUDA!!!|2
+10|king_prk|Stop #HidupJKW yg ga penting itu. Sekarang lebih penting #SaveRajaAmpat|2
+11|anggas_keren|Liburan ke Bali... #Liburan #Bali|1
+12|king_prk|#TimnasDay|0
+13|anggas_keren|Gaungkan Perjuangan!!! #SaveRajaAmpat|0
